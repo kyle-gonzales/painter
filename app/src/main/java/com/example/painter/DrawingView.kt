@@ -3,9 +3,9 @@ package com.example.painter
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
-
 
 // creating a custom view
 class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs) {
@@ -32,8 +32,8 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
         drawPaint!!.style = Paint.Style.STROKE
         drawPaint!!.strokeJoin = Paint.Join.ROUND
         drawPaint!!.strokeCap = Paint.Cap.ROUND // used whenever the paint's style is STROKE or STROKE_AND_FILL
-        canvasPaint = Paint(Paint.DITHER_FLAG)
-        brushSize = 20.toFloat()
+        canvasPaint = Paint(Paint.DITHER_FLAG) // anti-aliasing of the brush stroke?
+//        brushSize = 20.toFloat() deprecated; use setBrushSize() to dynamically set brush size
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -54,7 +54,7 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
                 drawPath!!.reset()
 
                 drawPath!!.moveTo(touchX!!, touchY!!) // sets the x,y to the area where you tapped the screen
-                drawPath!!.lineTo(touchX!!, touchY!!) // creates a point
+                drawPath!!.lineTo(touchX, touchY) // creates a point
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -87,6 +87,14 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
             drawPaint!!.color = drawPath!!.color
             canvas.drawPath(drawPath!!, drawPaint!!)
         }
+    }
+
+    public fun setBrushSize(newBrushSize: Float) {
+        brushSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, newBrushSize, resources.displayMetrics) // takes the screen dimension into consideration
+        //COMPLEX_UNIT_DIP => takes the density pixels into consideration
+        // resources.displayMetrics -> adjust the size to the metrics of the display -> ensures that it is proportionate to the size of the screen
+
+        drawPaint!!.strokeWidth = brushSize
     }
 
     internal inner class CustomPath(var color: Int, var brushThickness : Float) : Path() { // each stroke drawn on the canvas
