@@ -5,11 +5,25 @@
     android:layout_width="match_parent"
     android:orientation="vertical"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    android:gravity="center_horizontal"
+    android:background="@color/purple_200"
+    >
 
     <com.example.painter.DrawingView
         android:id="@+id/drawingView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_margin="4dp"
+        android:background="@drawable/background_drawing_view_layout" />
+
+    <ImageButton
+        android:id="@+id/ibBrushSize"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="4dp"
+        android:src = "@drawable/ic_brush"
+        android:scaleType="fitXY"/>
 
 </LinearLayout>
