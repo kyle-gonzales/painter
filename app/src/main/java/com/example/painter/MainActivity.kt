@@ -16,10 +16,7 @@ class MainActivity : AppCompatActivity() {
         drawingView!!.setBrushSize(10f)
 
         val ibBrushSize = findViewById<ImageButton>(R.id.ibBrushSize)
-
         ibBrushSize.setOnClickListener { showBrushSizeSelectorDialog() }
-
-
     }
 
     private fun showBrushSizeSelectorDialog() { // create your own dialog
@@ -31,19 +28,16 @@ class MainActivity : AppCompatActivity() {
             drawingView!!.setBrushSize(10f) // set the brush size after clicking on the button
             brushDialog.dismiss() // close the dialog after clicking the button
         }
-
         val mediumBtn = brushDialog.findViewById<ImageButton>(R.id.ibMediumBrush)
         mediumBtn.setOnClickListener {
             drawingView!!.setBrushSize(20f)
             brushDialog.dismiss() // close the dialog after clicking the button
         }
-
         val largeBtn = brushDialog.findViewById<ImageButton>(R.id.ibLargeBrush)
         largeBtn.setOnClickListener {
             drawingView!!.setBrushSize(30f)
             brushDialog.dismiss() // close the dialog after clicking the button
         }
-
         brushDialog.show()
     }
 }
