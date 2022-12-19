@@ -97,6 +97,11 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
         drawPaint!!.strokeWidth = brushSize
     }
 
+    public fun setBrushColor(newBrushColor: Int){
+        color = newBrushColor
+        drawPaint!!.color = color
+    }
+
     internal inner class CustomPath(var color: Int, var brushThickness : Float) : Path() { // each stroke drawn on the canvas
 
     }
