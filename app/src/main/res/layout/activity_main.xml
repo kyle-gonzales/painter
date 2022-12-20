@@ -18,66 +18,161 @@
         android:layout_margin="4dp"
         android:background="@drawable/background_drawing_view_layout" />
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/llBrushPalette"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center">
         <ImageButton
             android:id="@+id/ibBlackBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/black_brush"
-            android:scaleType="center"
-            android:contentDescription="Black Brush" />
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/black"
+            android:background="@color/black"
+            /><!-- android:background sets the background color of all the layers of the shape -->
         <ImageButton
-            android:contentDescription="Red Brush"
             android:id="@+id/ibRedBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/red_brush"
-            android:scaleType="center"/>
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/red"
+            android:background="@color/red"
+            />
         <ImageButton
-            android:contentDescription="Green Brush"
             android:id="@+id/ibGreenBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/green_brush"
-            android:scaleType="center"/>
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/green"
+            android:background="@color/green"
+            />
         <ImageButton
-            android:contentDescription="Blue Brush"
             android:id="@+id/ibBlueBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/blue_brush"
-            android:scaleType="center"/>
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/blue"
+            android:background="@color/blue"
+            />
         <ImageButton
-            android:contentDescription="Yellow Brush"
-            android:id="@+id/ibYellowBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/yellow_brush"
-            android:scaleType="center"/>
-        <ImageButton
-            android:contentDescription="Pink Brush"
-            android:id="@+id/ibPinkBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/pink_brush"
-            android:scaleType="center"/>
-        <ImageButton
-            android:contentDescription="Cyan Brush"
             android:id="@+id/ibCyanBrush"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginHorizontal="2dp"
-            android:src="@drawable/cyan_brush"
-            android:scaleType="center"/>
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/cyan"
+            android:background="@color/cyan"
+            />
+        <ImageButton
+            android:id="@+id/ibPinkBrush"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/pink"
+            android:background="@color/pink"
+            />
+        <ImageButton
+            android:id="@+id/ibYellowBrush"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/yellow"
+            android:background="@color/yellow"
+            />
+        <ImageButton
+            android:id="@+id/ibSkinBrush"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/skin"
+            android:background="@color/skin"
+            />
+        <ImageButton
+            android:id="@+id/ibRandomBrush"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="2dp"
+            android:src="@drawable/pallet_default"
+            android:tag="@color/random"
+            android:background="@color/random"
+            />
+
+        <TextView
+            android:id="@+id/tvCustomColorBrush"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:text="CUSTOM"
+            android:background="@drawable/custom_default"
+            android:padding="2dp"
+            />
+
+
+<!--my approach creates a separate image button for all palettes-->
+<!--        <ImageButton-->
+<!--            android:id="@+id/ibBlackBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/black_brush"-->
+<!--            android:scaleType="center"-->
+<!--            android:contentDescription="Black Brush" />-->
+<!--        <ImageButton-->
+<!--            android:contentDescription="Red Brush"-->
+<!--            android:id="@+id/ibRedBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/red_brush"-->
+<!--            android:scaleType="center"/>-->
+<!--        <ImageButton-->
+<!--            android:contentDescription="Green Brush"-->
+<!--            android:id="@+id/ibGreenBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/green_brush"-->
+<!--            android:scaleType="center"/>-->
+<!--        <ImageButton-->
+<!--            android:contentDescription="Blue Brush"-->
+<!--            android:id="@+id/ibBlueBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/blue_brush"-->
+<!--            android:scaleType="center"/>-->
+<!--        <ImageButton-->
+<!--            android:contentDescription="Yellow Brush"-->
+<!--            android:id="@+id/ibYellowBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/yellow_brush"-->
+<!--            android:scaleType="center"/>-->
+<!--        <ImageButton-->
+<!--            android:contentDescription="Pink Brush"-->
+<!--            android:id="@+id/ibPinkBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/pink_brush"-->
+<!--            android:scaleType="center"/>-->
+<!--        <ImageButton-->
+<!--            android:contentDescription="Cyan Brush"-->
+<!--            android:id="@+id/ibCyanBrush"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_marginHorizontal="2dp"-->
+<!--            android:src="@drawable/cyan_brush"-->
+<!--            android:scaleType="center"/>-->
     </LinearLayout>
 
     <ImageButton
