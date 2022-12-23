@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,13 +11,31 @@
     android:background="@color/purple_200"
     >
 
-    <com.example.painter.DrawingView
-        android:id="@+id/drawingView"
+    <FrameLayout
+        android:id="@+id/flDrawingViewContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:layout_margin="4dp"
-        android:background="@drawable/background_drawing_view_layout" />
+        android:padding="1dp"
+        android:background="@drawable/background_drawing_view_layout">
+        <!-- the frame layout will have multiple layers and the drawing view is one of the layers-->
+
+        <ImageView
+            android:id="@+id/ivBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:background="@drawable/kyle_bg"/>
+
+        <com.example.painter.DrawingView
+            android:id="@+id/drawingView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80ffffff" /> <!--on top of the image view -->
+
+    </FrameLayout>
+
     <LinearLayout
         android:id="@+id/llBrushPalette"
         android:layout_width="wrap_content"
@@ -175,11 +194,28 @@
 <!--            android:scaleType="center"/>-->
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/ibBrushSize"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_margin="4dp"
-        android:src = "@drawable/ic_brush"
-        android:scaleType="fitXY"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+        <ImageButton
+            android:id="@+id/ibSetBackground"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="4dp"
+            android:src = "@drawable/ic_gallery"
+            android:scaleType="fitXY"/>
+        <ImageButton
+            android:id="@+id/ibBrushSize"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="4dp"
+            android:src = "@drawable/ic_brush"
+            android:scaleType="fitXY"/>
+
+
+
+    </LinearLayout>
+
 </LinearLayout>
