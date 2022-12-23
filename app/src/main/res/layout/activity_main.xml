@@ -25,15 +25,13 @@
             android:id="@+id/ivBackground"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:background="@drawable/kyle_bg"/>
-
+            android:background="@drawable/ic_kyle"
+            android:scaleType="centerInside" />
         <com.example.painter.DrawingView
             android:id="@+id/drawingView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#80ffffff" /> <!--on top of the image view -->
-
     </FrameLayout>
 
     <LinearLayout
