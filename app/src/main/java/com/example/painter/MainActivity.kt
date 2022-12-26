@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
             imageBackground.setImageURI(result.data?.data) // path towards an image on your device, not the actual image
         }
     }
-    /*permission result launcher for one permission*/
+    /*permission result launcher for multiple permissions*/
     private val externalStorageResultLauncher : ActivityResultLauncher<String> = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         isGranted -> if (isGranted) {
 //            Toast.makeText(this, "access granted", Toast.LENGTH_SHORT).show()

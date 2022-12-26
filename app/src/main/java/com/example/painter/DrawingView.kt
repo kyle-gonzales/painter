@@ -65,7 +65,7 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
             }
             else -> return false
         }
-        invalidate()
+        invalidate() // redraw changes on the screen and results to a call to onDraw()
         return true
     }
 
