@@ -211,6 +211,14 @@
             android:src = "@drawable/ic_brush"
             android:scaleType="fitXY"/>
 
+        <ImageButton
+            android:id="@+id/ibUndo"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="4dp"
+            android:src = "@drawable/ic_undo"
+            android:scaleType="fitXY" />
+
 
 
     </LinearLayout>

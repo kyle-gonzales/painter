@@ -25,17 +25,16 @@ class MainActivity : AppCompatActivity() {
 
     private var drawingView : DrawingView? = null
     private var ibCurrentBrushColor : ImageButton? = null
+    private var ibUndo : ImageButton? = null
+    private var tvCustomColorBrush : TextView? = null
 
     private val openGalleryLauncher : ActivityResultLauncher<Intent> = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         result ->
         if (result.resultCode == RESULT_OK && result.data != null)  {
             val imageBackground : ImageView = findViewById(R.id.ivBackground)
-
             imageBackground.setImageURI(result.data?.data) // path towards an image on your device, not the actual image
         }
     }
-
-    var tvCustomColorBrush : TextView? = null
     /*permission result launcher for one permission*/
     private val externalStorageResultLauncher : ActivityResultLauncher<String> = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         isGranted -> if (isGranted) {
@@ -45,7 +44,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "access denied", Toast.LENGTH_SHORT).show()
         }
-
     }
 
     @SuppressLint("MissingInflatedId")
@@ -64,7 +62,6 @@ class MainActivity : AppCompatActivity() {
         btnCameraPermission.setOnClickListener {
             requestStoragePermission()
         }
-
 
         val ibBrushSize = findViewById<ImageButton>(R.id.ibBrushSize)
         ibBrushSize.setOnClickListener { showBrushSizeSelectorDialog() }
@@ -96,11 +93,14 @@ class MainActivity : AppCompatActivity() {
         val ibRandomBrush = findViewById<ImageButton>(R.id.ibRandomBrush)
         ibRandomBrush.setOnClickListener { brushColorClicked(ibRandomBrush) }
 
-        tvCustomColorBrush = findViewById<TextView>(R.id.tvCustomColorBrush)
+        tvCustomColorBrush = findViewById(R.id.tvCustomColorBrush)
         tvCustomColorBrush?.setOnClickListener {
             openColorPickerDialogue()
             brushColorClicked(tvCustomColorBrush)
         }
+
+        ibUndo = findViewById(R.id.ibUndo)
+        ibUndo?.setOnClickListener { drawingView?.undoPath() }
     }
 
     private fun requestStoragePermission() {

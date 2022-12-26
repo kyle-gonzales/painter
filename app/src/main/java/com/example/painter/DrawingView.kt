@@ -56,11 +56,9 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
                 drawPath!!.moveTo(touchX!!, touchY!!) // sets the x,y to the area where you tapped the screen
                 drawPath!!.lineTo(touchX, touchY) // creates a point
             }
-
             MotionEvent.ACTION_MOVE -> {
                 drawPath!!.lineTo(touchX!!, touchY!!) // draws as you slide your finger on the screen
             }
-
             MotionEvent.ACTION_UP -> {
                 paths.add(drawPath!!)
                 drawPath = CustomPath(color, brushSize) // reset the path to a blank path
@@ -100,6 +98,13 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
     public fun setBrushColor(newBrushColor: String){
         color = Color.parseColor(newBrushColor)
         drawPaint!!.color = color
+    }
+
+    public fun undoPath() {
+        if (paths.size > 0) {
+            paths.removeAt(paths.size - 1)
+            invalidate()
+        }
     }
 
     internal inner class CustomPath(var color: Int, var brushThickness : Float) : Path() { // each stroke drawn on the canvas
