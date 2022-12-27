@@ -91,22 +91,18 @@ class DrawingView(context : Context, attrs: AttributeSet) : View(context, attrs)
         brushSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, newBrushSize, resources.displayMetrics) // takes the screen dimension into consideration
         //COMPLEX_UNIT_DIP => takes the density pixels into consideration
         // resources.displayMetrics -> adjust the size to the metrics of the display -> ensures that it is proportionate to the size of the screen
-
         drawPaint!!.strokeWidth = brushSize
     }
-
     public fun setBrushColor(newBrushColor: String){
         color = Color.parseColor(newBrushColor)
         drawPaint!!.color = color
     }
-
     public fun undoPath() {
         if (paths.size > 0) {
             paths.removeAt(paths.size - 1)
             invalidate()
         }
     }
-
     internal inner class CustomPath(var color: Int, var brushThickness : Float) : Path() { // each stroke drawn on the canvas
 
     }

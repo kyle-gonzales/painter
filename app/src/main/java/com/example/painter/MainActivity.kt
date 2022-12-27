@@ -4,10 +4,10 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
-import android.app.Instrumentation.ActivityResult
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
@@ -17,7 +17,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
-import com.google.android.material.snackbar.Snackbar
 import yuku.ambilwarna.AmbilWarnaDialog
 import yuku.ambilwarna.AmbilWarnaDialog.OnAmbilWarnaListener
 
@@ -27,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private var ibCurrentBrushColor : ImageButton? = null
     private var ibUndo : ImageButton? = null
     private var tvCustomColorBrush : TextView? = null
+    private var ibSave : ImageButton? = null
 
     private val openGalleryLauncher : ActivityResultLauncher<Intent> = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         result ->
@@ -36,16 +36,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
     /*permission result launcher for multiple permissions*/
-    private val externalStorageResultLauncher : ActivityResultLauncher<String> = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        isGranted -> if (isGranted) {
-//            Toast.makeText(this, "access granted", Toast.LENGTH_SHORT).show()
-            val pickIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI) // run intent to go to other application
-            openGalleryLauncher.launch(pickIntent)
-        } else {
-            Toast.makeText(this, "access denied", Toast.LENGTH_SHORT).show()
+    private val externalStorageResultLauncher : ActivityResultLauncher<Array<String>> = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        permissions ->
+        permissions.entries.forEach {
+            var permissionName = it.key
+            var isGranted = it.value
+
+            if (isGranted) {
+                if (permissionName == Manifest.permission.READ_EXTERNAL_STORAGE) {
+//                    Toast.makeText(this, "access granted", Toast.LENGTH_SHORT).show()
+                    val pickIntent = Intent(
+                        Intent.ACTION_PICK,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    ) // run intent to go to other application
+                    openGalleryLauncher.launch(pickIntent)
+                } else if (permissionName == Manifest.permission.WRITE_EXTERNAL_STORAGE) {
+                    Toast.makeText(
+                        this,
+                        "write external storage access granted",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "access granted",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else {
+                if (permissionName == Manifest.permission.READ_EXTERNAL_STORAGE) {
+                    Toast.makeText(this, "read external storage access denied", Toast.LENGTH_SHORT)
+                        .show()
+
+                } else if (permissionName == Manifest.permission.WRITE_EXTERNAL_STORAGE) {
+                    Toast.makeText(this, "write external storage access denied", Toast.LENGTH_SHORT)
+                        .show()
+                } else {
+                    Toast.makeText(this, "access denied", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
         }
     }
-
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,11 +89,6 @@ class MainActivity : AppCompatActivity() {
 
         drawingView = findViewById(R.id.drawingView)
         drawingView!!.setBrushSize(10f)
-
-        val btnCameraPermission : ImageButton = findViewById(R.id.ibSetBackground)
-        btnCameraPermission.setOnClickListener {
-            requestStoragePermission()
-        }
 
         val ibBrushSize = findViewById<ImageButton>(R.id.ibBrushSize)
         ibBrushSize.setOnClickListener { showBrushSizeSelectorDialog() }
@@ -98,17 +125,49 @@ class MainActivity : AppCompatActivity() {
             openColorPickerDialogue()
             brushColorClicked(tvCustomColorBrush)
         }
-
         ibUndo = findViewById(R.id.ibUndo)
         ibUndo?.setOnClickListener { drawingView?.undoPath() }
+
+        // permissions
+        val ibSetBackground : ImageButton = findViewById(R.id.ibSetBackground)
+        ibSetBackground.setOnClickListener {
+            requestStoragePermission()
+        }
+
+        ibSave = findViewById(R.id.ibSave)
+        ibSave?.setOnClickListener {
+            requestStoragePermission()
+        }
+    }
+
+    private fun viewToBitmap(view : View) : Bitmap {
+        val bitmap : Bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val bgDrawable = view.background
+
+        if (bgDrawable != null) {
+            bgDrawable.draw(canvas) // draw background into the canvas
+        } else {
+            canvas.drawColor(Color.WHITE) // fill the background with white
+        }
+
+        view.draw(canvas) //draw the canvas on the view
+
+        return bitmap
     }
 
     private fun requestStoragePermission() {
         // if we have already asked for permission, yet the user did not grant access, display a dialog
         if (shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
             showRationalDialog("Painter Requires Access to External Storage", "User files cannot be used because storage access is denied")
-        } else {
-            externalStorageResultLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            showRationalDialog("Painter Requires Access to External Storage", "User files cannot be used because storage access is denied")
+        }else {
+            // request for permission
+            externalStorageResultLauncher.launch(
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ))
         }
     }
 
