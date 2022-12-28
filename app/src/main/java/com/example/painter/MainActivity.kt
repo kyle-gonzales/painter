@@ -4,12 +4,17 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.view.View
 import android.widget.*
@@ -17,8 +22,13 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import yuku.ambilwarna.AmbilWarnaDialog
 import yuku.ambilwarna.AmbilWarnaDialog.OnAmbilWarnaListener
+import java.io.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,8 +49,8 @@ class MainActivity : AppCompatActivity() {
     private val externalStorageResultLauncher : ActivityResultLauncher<Array<String>> = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         permissions ->
         permissions.entries.forEach {
-            var permissionName = it.key
-            var isGranted = it.value
+            val isGranted = it.value
+            val permissionName = it.key
 
             if (isGranted) {
                 if (permissionName == Manifest.permission.READ_EXTERNAL_STORAGE) {
@@ -50,12 +60,6 @@ class MainActivity : AppCompatActivity() {
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                     ) // run intent to go to other application
                     openGalleryLauncher.launch(pickIntent)
-                } else if (permissionName == Manifest.permission.WRITE_EXTERNAL_STORAGE) {
-                    Toast.makeText(
-                        this,
-                        "write external storage access granted",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 } else {
                     Toast.makeText(
                         this,
@@ -64,17 +68,7 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                 }
             } else {
-                if (permissionName == Manifest.permission.READ_EXTERNAL_STORAGE) {
-                    Toast.makeText(this, "read external storage access denied", Toast.LENGTH_SHORT)
-                        .show()
-
-                } else if (permissionName == Manifest.permission.WRITE_EXTERNAL_STORAGE) {
-                    Toast.makeText(this, "write external storage access denied", Toast.LENGTH_SHORT)
-                        .show()
-                } else {
-                    Toast.makeText(this, "access denied", Toast.LENGTH_SHORT)
-                        .show()
-                }
+                Toast.makeText(this, "External Storage Access is Denied", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -136,33 +130,136 @@ class MainActivity : AppCompatActivity() {
 
         ibSave = findViewById(R.id.ibSave)
         ibSave?.setOnClickListener {
-            requestStoragePermission()
+
+            if (isStorageAllowed()) {
+//                Toast.makeText(this, "saving...", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val flDrawingView : FrameLayout = findViewById(R.id.flDrawingViewContainer)
+
+                    val bitmap = viewToBitmap(flDrawingView)
+                    saveBitmapFile(bitmap)
+                }
+            }
         }
     }
-
+    // the view contains the canvas, which contains the paths (brush strokes). the image is the background of the view. the bitmap is an image that contains the background image of the view, and the brush strokes of the canvas
     private fun viewToBitmap(view : View) : Bitmap {
         val bitmap : Bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val bgDrawable = view.background
 
         if (bgDrawable != null) {
-            bgDrawable.draw(canvas) // draw background into the canvas
+            bgDrawable.draw(canvas) // draw the view's background onto the canvas
         } else {
-            canvas.drawColor(Color.WHITE) // fill the background with white
+            canvas.drawColor(Color.WHITE) // fill the view's background with white
         }
-
-        view.draw(canvas) //draw the canvas on the view
-
+        view.draw(canvas) //draw the canvas on the view; essentially, it puts all the elements on to the view, which is converted into a bitmap
         return bitmap
     }
+    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
+        var result = ""
+        withContext(Dispatchers.IO){
+            if (mBitmap != null) {
+                try{
+                    val name = "Painting" + System.currentTimeMillis() / 1000 + ".png"
+                    val relativeLocation = Environment.DIRECTORY_DCIM + "/Painter"
 
-    private fun requestStoragePermission() {
+                    val contentValues  = ContentValues().apply {
+                        put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+
+                        // without this part causes "Failed to create new MediaStore record" exception to be invoked (uri is null below)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.Images.ImageColumns.RELATIVE_PATH, relativeLocation)
+                        }
+                    }
+                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    var stream: OutputStream? = null
+                    var uri: Uri? = null
+
+                    try {
+                        uri = contentResolver.insert(contentUri, contentValues)
+                        if (uri == null){
+                            throw IOException("Failed to create new MediaStore record.")
+                        }
+                        stream = contentResolver.openOutputStream(uri)
+                        if (stream == null){
+                            throw IOException("Failed to get output stream.")
+                        }
+                        if (!mBitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)) {
+                            throw IOException("Failed to save bitmap.")
+                        }
+                        result = "$relativeLocation/$name"
+                    } catch(e: IOException) {
+                        if (uri != null) {
+                            contentResolver.delete(uri, null, null)
+                        }
+                        throw IOException(e)
+                    } finally {
+                        stream?.close()
+                    }
+                    runOnUiThread{
+                        if(result.isNotEmpty()){
+                            Toast.makeText(this@MainActivity,
+                                "File saved successfully: $relativeLocation/$name", Toast.LENGTH_SHORT).show()
+                        }
+                        else{
+                            Toast.makeText(this@MainActivity,
+                                "Something went wrong saving the file", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch(e:Exception){
+                    result = ""
+                    e.printStackTrace()
+                }
+            }
+        }
+        return result
+    }
+/* ALTERNATIVE METHOD: Files are saved to emulator on android device */
+//    private suspend fun saveBitmapFile (bitmap : Bitmap?) : String {
+//        var result = ""
+//        withContext(Dispatchers.IO) {
+//            if (bitmap != null) {
+//                try {
+//                    val bytes = ByteArrayOutputStream()
+//                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
+//
+//                    val file = File(externalCacheDir?.absoluteFile.toString() + File.separator + "Painter" + getId() + ".png")
+//                    val fileOutput = FileOutputStream(file)
+//                    fileOutput.write(bytes.toByteArray()) // file is saved
+//                    fileOutput.close()
+//
+//                    result = file.absolutePath
+//
+//                    runOnUiThread {
+//                        if (result.isNotEmpty()) {
+//                            Toast.makeText(this@MainActivity, "File saved: $result", Toast.LENGTH_SHORT).show()
+//                        } else {
+//                            Toast.makeText(this@MainActivity, "Failed to save file", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                } catch (e : Exception) {
+//                    result = ""
+//                    e.printStackTrace()
+//                }
+//            }
+//        }
+//        return result
+//    }
+
+    private fun isStorageAllowed() : Boolean{
+
+        val result = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+
+        return result == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestStoragePermission(from : String = "SET_BG") {
         // if we have already asked for permission, yet the user did not grant access, display a dialog
         if (shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
             showRationalDialog("Painter Requires Access to External Storage", "User files cannot be used because storage access is denied")
-        } else if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            showRationalDialog("Painter Requires Access to External Storage", "User files cannot be used because storage access is denied")
-        }else {
+        } else {
             // request for permission
             externalStorageResultLauncher.launch(
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE,
