@@ -18,4 +18,19 @@
     <color name="pink">#ff00ff</color>
     <color name="random">#123456</color>
 
+<!--custom light theme-->
+    <color name="tan">#D4B483</color>
+    <color name="light_grey">#BFC0C0</color>
+    <color name="bronze">#6E633D</color>
+    <color name="phthalo_green">#14281D</color>
+    <color name="hunter_green">#355834</color>
+    <color name="bone">#E4DFDA</color>
+    <color name="dark_grey">#575A5E</color>
+
+<!--custom dark theme-->
+    <color name="onyx">#36393B</color>
+    <color name="pewter_blue">#93A8AC</color>
+    <color name="almost_black">#313235</color>
+
+
 </resources>

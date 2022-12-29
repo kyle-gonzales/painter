@@ -10,20 +10,23 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/small_brush"
-        android:contentDescription="Small Brush" />
+        android:contentDescription="Small Brush"
+        android:backgroundTint="?attr/colorSecondary"/>
 
     <ImageButton
         android:id="@+id/ibMediumBrush"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/medium_brush"
-        android:contentDescription="Medium Brush"/>
+        android:contentDescription="Medium Brush"
+        android:backgroundTint="?attr/colorSecondary"/>
 
     <ImageButton
         android:id="@+id/ibLargeBrush"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/large_brush"
-        android:contentDescription="Large Brush"/>
+        android:contentDescription="Large Brush"
+        android:backgroundTint="?attr/colorSecondary"/>
 
 </LinearLayout>
