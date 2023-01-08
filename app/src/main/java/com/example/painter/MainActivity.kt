@@ -4,23 +4,27 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.get
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +33,7 @@ import kotlinx.coroutines.withContext
 import yuku.ambilwarna.AmbilWarnaDialog
 import yuku.ambilwarna.AmbilWarnaDialog.OnAmbilWarnaListener
 import java.io.*
+import kotlin.system.measureTimeMillis
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,9 +42,10 @@ class MainActivity : AppCompatActivity() {
     private var ibUndo : ImageButton? = null
     private var tvCustomColorBrush : TextView? = null
     private var ibSave : ImageButton? = null
+    private var myProgressDialog : Dialog? = null
 
     private val openGalleryLauncher : ActivityResultLauncher<Intent> = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        result ->
+            result ->
         if (result.resultCode == RESULT_OK && result.data != null)  {
             val imageBackground : ImageView = findViewById(R.id.ivBackground)
             imageBackground.setImageURI(result.data?.data) // path towards an image on your device, not the actual image
@@ -47,7 +53,7 @@ class MainActivity : AppCompatActivity() {
     }
     /*permission result launcher for multiple permissions*/
     private val externalStorageResultLauncher : ActivityResultLauncher<Array<String>> = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        permissions ->
+            permissions ->
         permissions.entries.forEach {
             val isGranted = it.value
             val permissionName = it.key
@@ -133,6 +139,7 @@ class MainActivity : AppCompatActivity() {
 
             if (isStorageAllowed()) {
 //                Toast.makeText(this, "saving...", Toast.LENGTH_SHORT).show()
+                showProgressDialog()
                 lifecycleScope.launch {
                     val flDrawingView : FrameLayout = findViewById(R.id.flDrawingViewContainer)
 
@@ -156,90 +163,64 @@ class MainActivity : AppCompatActivity() {
         view.draw(canvas) //draw the canvas on the view; essentially, it puts all the elements on to the view, which is converted into a bitmap
         return bitmap
     }
-    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
-        var result = ""
-        withContext(Dispatchers.IO){
-            if (mBitmap != null) {
-                try{
-                    val name = "Painting" + System.currentTimeMillis() / 1000 + ".png"
-                    val relativeLocation = Environment.DIRECTORY_DCIM + "/Painter"
 
-                    val contentValues  = ContentValues().apply {
-                        put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
-                        put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-
-                        // without this part causes "Failed to create new MediaStore record" exception to be invoked (uri is null below)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            put(MediaStore.Images.ImageColumns.RELATIVE_PATH, relativeLocation)
-                        }
-                    }
-                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    var stream: OutputStream? = null
-                    var uri: Uri? = null
-
-                    try {
-                        uri = contentResolver.insert(contentUri, contentValues)
-                        if (uri == null){
-                            throw IOException("Failed to create new MediaStore record.")
-                        }
-                        stream = contentResolver.openOutputStream(uri)
-                        if (stream == null){
-                            throw IOException("Failed to get output stream.")
-                        }
-                        if (!mBitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)) {
-                            throw IOException("Failed to save bitmap.")
-                        }
-                        result = "$relativeLocation/$name"
-                    } catch(e: IOException) {
-                        if (uri != null) {
-                            contentResolver.delete(uri, null, null)
-                        }
-                        throw IOException(e)
-                    } finally {
-                        stream?.close()
-                    }
-                    runOnUiThread{
-                        if(result.isNotEmpty()){
-                            Toast.makeText(this@MainActivity,
-                                "File saved successfully: $relativeLocation/$name", Toast.LENGTH_SHORT).show()
-                        }
-                        else{
-                            Toast.makeText(this@MainActivity,
-                                "Something went wrong saving the file", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } catch(e:Exception){
-                    result = ""
-                    e.printStackTrace()
-                }
-            }
-        }
-        return result
-    }
-/* ALTERNATIVE METHOD: Files are saved to emulator on android device */
-//    private suspend fun saveBitmapFile (bitmap : Bitmap?) : String {
+//    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
 //        var result = ""
-//        withContext(Dispatchers.IO) {
-//            if (bitmap != null) {
-//                try {
-//                    val bytes = ByteArrayOutputStream()
-//                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
+//        withContext(Dispatchers.IO){
+//            if (mBitmap != null) {
+//                try{
+//                    val name = "Painting" + System.currentTimeMillis() / 1000 + ".png"
+//                    val relativeLocation = Environment.DIRECTORY_DCIM + "/Painter"
+////                    val absoluteLocation = this@MainActivity.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath.toString() + "/Painter
+//                    val absPath = "/storage/" + Environment.DIRECTORY_DCIM + "/Painter"
 //
-//                    val file = File(externalCacheDir?.absoluteFile.toString() + File.separator + "Painter" + getId() + ".png")
-//                    val fileOutput = FileOutputStream(file)
-//                    fileOutput.write(bytes.toByteArray()) // file is saved
-//                    fileOutput.close()
+//                    Log.d("Relative Path", relativeLocation)
+//                    val contentValues  = ContentValues().apply {
+//                        put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
+//                        put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
 //
-//                    result = file.absolutePath
-//
-//                    runOnUiThread {
-//                        if (result.isNotEmpty()) {
-//                            Toast.makeText(this@MainActivity, "File saved: $result", Toast.LENGTH_SHORT).show()
-//                        } else {
-//                            Toast.makeText(this@MainActivity, "Failed to save file", Toast.LENGTH_SHORT).show()
+//                        // without this part causes "Failed to create new MediaStore record" exception to be invoked (uri is null below)
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                            put(MediaStore.Images.ImageColumns.RELATIVE_PATH, relativeLocation)
 //                        }
 //                    }
-//                } catch (e : Exception) {
+//                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+//                    var stream: OutputStream? = null
+//                    var uri: Uri? = null
+//
+//                    try {
+//                        uri = contentResolver.insert(contentUri, contentValues)
+//                        if (uri == null){
+//                            throw IOException("Failed to create new MediaStore record.")
+//                        }
+//                        stream = contentResolver.openOutputStream(uri)
+//                        if (stream == null){
+//                            throw IOException("Failed to get output stream.")
+//                        }
+//                        if (!mBitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)) {
+//                            throw IOException("Failed to save bitmap.")
+//                        }
+//                        result = "$absPath/$name"
+//                    } catch(e: IOException) {
+//                        if (uri != null) {
+//                            contentResolver.delete(uri, null, null)
+//                        }
+//                        throw IOException(e)
+//                    } finally {
+//                        stream?.close()
+//                    }
+//                    runOnUiThread{
+//                        cancelProgressDialog()
+//                        if(result.isNotEmpty()){
+//                            Toast.makeText(this@MainActivity,
+//                                "File saved successfully: $relativeLocation/$name", Toast.LENGTH_SHORT).show()
+//                        }
+//                        else{
+//                            Toast.makeText(this@MainActivity,
+//                                "Something went wrong saving the file", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                } catch(e:Exception){
 //                    result = ""
 //                    e.printStackTrace()
 //                }
@@ -247,6 +228,40 @@ class MainActivity : AppCompatActivity() {
 //        }
 //        return result
 //    }
+/* ALTERNATIVE METHOD: Files are saved to emulator on android device */
+    private suspend fun saveBitmapFile (bitmap : Bitmap?) : String {
+        var result = ""
+        withContext(Dispatchers.IO) {
+            if (bitmap != null) {
+                try {
+                    val bytes = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
+
+                    val file = File(externalCacheDir?.absoluteFile.toString() + File.separator + "Painter" + System.currentTimeMillis() / 1000 + ".png")
+                    val fileOutput = FileOutputStream(file)
+                    fileOutput.write(bytes.toByteArray()) // file is saved
+                    fileOutput.close()
+
+                    result = file.absolutePath
+
+                    runOnUiThread {
+                        if (result.isNotEmpty()) {
+                            cancelProgressDialog()
+                            Toast.makeText(this@MainActivity, "File saved: $result", Toast.LENGTH_SHORT).show()
+                            shareFile(FileProvider.getUriForFile(baseContext, "com.example.painter.fileprovider", file)) // only share the image if the file has been successfully saved
+
+                        } else {
+                            Toast.makeText(this@MainActivity, "Failed to save file", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e : Exception) {
+                    result = ""
+                    e.printStackTrace()
+                }
+            }
+        }
+        return result
+    }
 
     private fun isStorageAllowed() : Boolean{
 
@@ -315,6 +330,20 @@ class MainActivity : AppCompatActivity() {
         brushDialog.show()
     }
 
+    private fun showProgressDialog() {
+        myProgressDialog = Dialog(this)
+
+        myProgressDialog?.setContentView(R.layout.progress_dialog)
+
+        myProgressDialog?.show()
+    }
+    private fun cancelProgressDialog() {
+        if (myProgressDialog != null) {
+            myProgressDialog?.dismiss()
+            myProgressDialog = null
+        }
+    }
+
     private fun brushColorClicked(view: View?) {
         if (view is TextView) {
             ibCurrentBrushColor!!.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_default)) // reset to un-clicked bg
@@ -329,5 +358,36 @@ class MainActivity : AppCompatActivity() {
 
             tvCustomColorBrush?.setBackgroundColor(Color.RED) //! needs to be optimized
         }
+    }
+    // @param : path to file
+//    private fun shareFile(result : String) {
+//        /*MediaScannerConnection provides a way for applications to pass a
+//        newly created or downloaded media file to the media scanner service.
+//        The media scanner service will read metadata from the file and add
+//        the file to the media content provider.
+//        The MediaScannerConnectionClient provides an interface for the
+//        media scanner service to return the Uri for a newly scanned file
+//        to the client of the MediaScannerConnection class.*/
+//        MediaScannerConnection.scanFile(this@MainActivity, arrayOf(result), null) {
+//            path, uri ->
+//            val shareIntent = Intent()
+//            shareIntent.action = Intent.ACTION_SEND // opens snack  bar that allows us to send items
+//            shareIntent.putExtra(Intent.EXTRA_STREAM, uri) // adds the path to file to the intent
+//
+//            shareIntent.type = "image/png"
+//
+//            startActivity(Intent.createChooser(shareIntent, "Share Painting"))
+//        }
+//    }
+
+    private fun shareFile(uri : Uri) {
+        val shareIntent = Intent()
+        shareIntent.action = Intent.ACTION_SEND // opens snack  bar that allows us to send items
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri) // adds the path to file to the intent
+
+        shareIntent.type = "image/png"
+
+        startActivity(Intent.createChooser(shareIntent, "Share Painting"))
+
     }
 }
