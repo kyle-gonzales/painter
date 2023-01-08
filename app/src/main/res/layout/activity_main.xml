@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity"
     android:gravity="center_horizontal"
-    android:background="@color/purple_200"
+    android:background="?attr/colorPrimaryVariant"
     >
 
     <FrameLayout
@@ -30,7 +30,7 @@
             android:id="@+id/drawingView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#80ffffff" /> <!--on top of the image view -->
+            android:background="#80ffffff" /> <!--translucent layer on top of the image view -->
     </FrameLayout>
 
     <LinearLayout
@@ -202,14 +202,16 @@
             android:layout_height="50dp"
             android:layout_margin="4dp"
             android:src = "@drawable/ic_gallery"
-            android:scaleType="fitXY"/>
+            android:scaleType="fitXY"
+            android:backgroundTint="?attr/colorSecondary"/>
         <ImageButton
             android:id="@+id/ibBrushSize"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_margin="4dp"
             android:src = "@drawable/ic_brush"
-            android:scaleType="fitXY"/>
+            android:scaleType="fitXY"
+            android:backgroundTint="?attr/colorSecondary"/>
 
         <ImageButton
             android:id="@+id/ibUndo"
@@ -217,7 +219,17 @@
             android:layout_height="50dp"
             android:layout_margin="4dp"
             android:src = "@drawable/ic_undo"
-            android:scaleType="fitXY" />
+            android:scaleType="fitXY"
+            android:backgroundTint="?attr/colorSecondary"/>
+
+        <ImageButton
+            android:id="@+id/ibSave"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="4dp"
+            android:src="@drawable/ic_save"
+            android:scaleType="fitXY"
+            android:backgroundTint="?attr/colorSecondary"/>
 
 
 
