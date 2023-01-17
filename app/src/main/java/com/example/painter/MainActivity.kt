@@ -4,14 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -33,7 +31,6 @@ import kotlinx.coroutines.withContext
 import yuku.ambilwarna.AmbilWarnaDialog
 import yuku.ambilwarna.AmbilWarnaDialog.OnAmbilWarnaListener
 import java.io.*
-import kotlin.system.measureTimeMillis
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,7 +39,16 @@ class MainActivity : AppCompatActivity() {
     private var ibUndo : ImageButton? = null
     private var tvCustomColorBrush : TextView? = null
     private var ibSave : ImageButton? = null
+    private var ibShare : ImageButton? = null
     private var myProgressDialog : Dialog? = null
+    private var currentCustomColor : Int? = null
+
+    private val setCurrentCustomColor = {
+        if(currentCustomColor != null)
+            currentCustomColor
+        else
+            Color.RED
+    }
 
     private val openGalleryLauncher : ActivityResultLauncher<Intent> = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             result ->
@@ -92,37 +98,27 @@ class MainActivity : AppCompatActivity() {
 
         val ibBrushSize = findViewById<ImageButton>(R.id.ibBrushSize)
         ibBrushSize.setOnClickListener { showBrushSizeSelectorDialog() }
-
         val ibBlackBrush = findViewById<ImageButton>(R.id.ibBlackBrush)
         ibBlackBrush.setOnClickListener { brushColorClicked(ibBlackBrush) }
-
         val ibRedBrush = findViewById<ImageButton>(R.id.ibRedBrush)
         ibRedBrush.setOnClickListener { brushColorClicked(ibRedBrush) }
-
         val ibGreenBrush = findViewById<ImageButton>(R.id.ibGreenBrush)
         ibGreenBrush.setOnClickListener { brushColorClicked(ibGreenBrush) }
-
         val ibBlueBrush = findViewById<ImageButton>(R.id.ibBlueBrush)
         ibBlueBrush.setOnClickListener { brushColorClicked(ibBlueBrush) }
-
         val ibYellowBrush = findViewById<ImageButton>(R.id.ibYellowBrush)
         ibYellowBrush.setOnClickListener { brushColorClicked(ibYellowBrush) }
-
         val ibPinkBrush = findViewById<ImageButton>(R.id.ibPinkBrush)
         ibPinkBrush.setOnClickListener { brushColorClicked(ibPinkBrush) }
-
         val ibCyanBrush = findViewById<ImageButton>(R.id.ibCyanBrush)
         ibCyanBrush.setOnClickListener { brushColorClicked(ibCyanBrush) }
-
         val ibSkinBrush = findViewById<ImageButton>(R.id.ibSkinBrush)
         ibSkinBrush.setOnClickListener {brushColorClicked(ibSkinBrush) }
-
         val ibRandomBrush = findViewById<ImageButton>(R.id.ibRandomBrush)
         ibRandomBrush.setOnClickListener { brushColorClicked(ibRandomBrush) }
 
         tvCustomColorBrush = findViewById(R.id.tvCustomColorBrush)
         tvCustomColorBrush?.setOnClickListener {
-            openColorPickerDialogue()
             brushColorClicked(tvCustomColorBrush)
         }
         ibUndo = findViewById(R.id.ibUndo)
@@ -142,9 +138,20 @@ class MainActivity : AppCompatActivity() {
                 showProgressDialog()
                 lifecycleScope.launch {
                     val flDrawingView : FrameLayout = findViewById(R.id.flDrawingViewContainer)
-
                     val bitmap = viewToBitmap(flDrawingView)
                     saveBitmapFile(bitmap)
+                }
+            }
+        }
+
+        ibShare = findViewById(R.id.ibShare)
+        ibShare?.setOnClickListener {
+            if (isStorageAllowed()) {
+                showProgressDialog()
+                lifecycleScope.launch {
+                    val flDrawingView : FrameLayout = findViewById(R.id.flDrawingViewContainer)
+                    val bitmap = viewToBitmap(flDrawingView)
+                    saveBitmapFileEmulator(bitmap)
                 }
             }
         }
@@ -163,73 +170,71 @@ class MainActivity : AppCompatActivity() {
         view.draw(canvas) //draw the canvas on the view; essentially, it puts all the elements on to the view, which is converted into a bitmap
         return bitmap
     }
-
-//    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
-//        var result = ""
-//        withContext(Dispatchers.IO){
-//            if (mBitmap != null) {
-//                try{
-//                    val name = "Painting" + System.currentTimeMillis() / 1000 + ".png"
-//                    val relativeLocation = Environment.DIRECTORY_DCIM + "/Painter"
-////                    val absoluteLocation = this@MainActivity.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath.toString() + "/Painter
-//                    val absPath = "/storage/" + Environment.DIRECTORY_DCIM + "/Painter"
-//
+    // uses MediaStore - saves file as png to InternalStorage/DCIM/Painter
+    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
+        var result = ""
+        withContext(Dispatchers.IO){
+            if (mBitmap != null) {
+                try{
+                    val name = "Painting" + System.currentTimeMillis() / 1000 + ".png"
+                    val relativeLocation = Environment.DIRECTORY_DCIM + "/Painter"
+//                    val absoluteLocation = this@MainActivity.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath.toString() + "/Painter"
 //                    Log.d("Relative Path", relativeLocation)
-//                    val contentValues  = ContentValues().apply {
-//                        put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
-//                        put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-//
-//                        // without this part causes "Failed to create new MediaStore record" exception to be invoked (uri is null below)
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//                            put(MediaStore.Images.ImageColumns.RELATIVE_PATH, relativeLocation)
-//                        }
-//                    }
-//                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-//                    var stream: OutputStream? = null
-//                    var uri: Uri? = null
-//
-//                    try {
-//                        uri = contentResolver.insert(contentUri, contentValues)
-//                        if (uri == null){
-//                            throw IOException("Failed to create new MediaStore record.")
-//                        }
-//                        stream = contentResolver.openOutputStream(uri)
-//                        if (stream == null){
-//                            throw IOException("Failed to get output stream.")
-//                        }
-//                        if (!mBitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)) {
-//                            throw IOException("Failed to save bitmap.")
-//                        }
-//                        result = "$absPath/$name"
-//                    } catch(e: IOException) {
-//                        if (uri != null) {
-//                            contentResolver.delete(uri, null, null)
-//                        }
-//                        throw IOException(e)
-//                    } finally {
-//                        stream?.close()
-//                    }
-//                    runOnUiThread{
-//                        cancelProgressDialog()
-//                        if(result.isNotEmpty()){
-//                            Toast.makeText(this@MainActivity,
-//                                "File saved successfully: $relativeLocation/$name", Toast.LENGTH_SHORT).show()
-//                        }
-//                        else{
-//                            Toast.makeText(this@MainActivity,
-//                                "Something went wrong saving the file", Toast.LENGTH_SHORT).show()
-//                        }
-//                    }
-//                } catch(e:Exception){
-//                    result = ""
-//                    e.printStackTrace()
-//                }
-//            }
-//        }
-//        return result
-//    }
+                    val contentValues  = ContentValues().apply {
+                        put(MediaStore.Images.ImageColumns.DISPLAY_NAME, name)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+
+                        // without this part causes "Failed to create new MediaStore record" exception to be invoked (uri is null below)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.Images.ImageColumns.RELATIVE_PATH, relativeLocation)
+                        }
+                    }
+                    val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    var stream: OutputStream? = null
+                    var uri: Uri? = null
+
+                    try {
+                        uri = contentResolver.insert(contentUri, contentValues)
+                        if (uri == null){
+                            throw IOException("Failed to create new MediaStore record.")
+                        }
+                        stream = contentResolver.openOutputStream(uri)
+                        if (stream == null){
+                            throw IOException("Failed to get output stream.")
+                        }
+                        if (!mBitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)) {
+                            throw IOException("Failed to save bitmap.")
+                        }
+                        result = "$relativeLocation/$name"
+                    } catch(e: IOException) {
+                        if (uri != null) {
+                            contentResolver.delete(uri, null, null)
+                        }
+                        throw IOException(e)
+                    } finally {
+                        stream?.close()
+                    }
+                    runOnUiThread{
+                        cancelProgressDialog()
+                        if(result.isNotEmpty()){
+                            Toast.makeText(this@MainActivity,
+                                "File saved successfully: $relativeLocation/$name", Toast.LENGTH_SHORT).show()
+                        }
+                        else{
+                            Toast.makeText(this@MainActivity,
+                                "Something went wrong. Couldn't save file...", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch(e:Exception){
+                    result = ""
+                    e.printStackTrace()
+                }
+            }
+        }
+        return result
+    }
 /* ALTERNATIVE METHOD: Files are saved to emulator on android device */
-    private suspend fun saveBitmapFile (bitmap : Bitmap?) : String {
+    private suspend fun saveBitmapFileEmulator (bitmap : Bitmap?) : String {
         var result = ""
         withContext(Dispatchers.IO) {
             if (bitmap != null) {
@@ -247,11 +252,10 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         if (result.isNotEmpty()) {
                             cancelProgressDialog()
-                            Toast.makeText(this@MainActivity, "File saved: $result", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "preparing to share...", Toast.LENGTH_SHORT).show()
                             shareFile(FileProvider.getUriForFile(baseContext, "com.example.painter.fileprovider", file)) // only share the image if the file has been successfully saved
-
                         } else {
-                            Toast.makeText(this@MainActivity, "Failed to save file", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Failed to share file", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } catch (e : Exception) {
@@ -264,9 +268,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isStorageAllowed() : Boolean{
-
         val result = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-
         return result == PackageManager.PERMISSION_GRANTED
     }
 
@@ -294,19 +296,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openColorPickerDialogue() {
-        val colorPickerDialogue = AmbilWarnaDialog(this, Color.RED, true,
-            object : OnAmbilWarnaListener {
-                override fun onCancel(dialog: AmbilWarnaDialog?) {
-                }
 
-                override fun onOk(dialog: AmbilWarnaDialog?, color: Int) {
-                    drawingView!!.setBrushColor("#${String.format("%x", color)}")
-                    tvCustomColorBrush?.setBackgroundColor(color)
+        val colorPickerDialogue = AmbilWarnaDialog(this, setCurrentCustomColor()!!, true,
+        object : OnAmbilWarnaListener {
+            override fun onCancel(dialog: AmbilWarnaDialog?){
+            }
+            override fun onOk(dialog : AmbilWarnaDialog?, color: Int){
+                drawingView!!.setBrushColor("#${String.format("%x", color)}")
+                currentCustomColor = color
+                tvCustomColorBrush?.setBackgroundColor(color)
 
-                }
-            })
+            }
+        })
         colorPickerDialogue.show()
     }
+
 
     private fun showBrushSizeSelectorDialog() { // create your own dialog
         val brushDialog = Dialog(this)
@@ -332,9 +336,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showProgressDialog() {
         myProgressDialog = Dialog(this)
-
         myProgressDialog?.setContentView(R.layout.progress_dialog)
-
         myProgressDialog?.show()
     }
     private fun cancelProgressDialog() {
@@ -345,20 +347,42 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun brushColorClicked(view: View?) {
-        if (view is TextView) {
-            ibCurrentBrushColor!!.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_default)) // reset to un-clicked bg
-        }
-        else if (view != ibCurrentBrushColor) {
-            val ibBrushColor = view as ImageButton
-            ibBrushColor.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_pressed)) // set to clicked bg
-            ibCurrentBrushColor!!.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_default)) // reset to un-clicked bg
-            val colorTag = ibBrushColor.tag.toString()
-            drawingView!!.setBrushColor(colorTag) // change brush color
-            ibCurrentBrushColor = ibBrushColor // set to current
+        if (view is TextView) { // preset-to-custom
+            ibCurrentBrushColor!!.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_default)) // reset the current brush color to default
+            openColorPickerDialogue()
 
-            tvCustomColorBrush?.setBackgroundColor(Color.RED) //! needs to be optimized
+            ibCurrentBrushColor = null
+            return
+        }
+
+        if (view != ibCurrentBrushColor) { // preset-to-preset | custom-to-preset
+            val ibBrushColor = view as ImageButton
+            val colorTag = ibBrushColor.tag.toString()
+            drawingView!!.setBrushColor(colorTag)
+
+            ibBrushColor.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_pressed))
+
+            /*
+            safe call operator (?) is used here instead of null assertion operator (!!) because preset-to-custom color conversion sets ibCurrentBrushColor to null.
+            Thus, during custom-to-preset color conversion, the statement is ignored.
+
+            Using null assertion would lead to null pointer exception.
+             */
+            ibCurrentBrushColor?.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.pallet_default))
+            ibCurrentBrushColor = ibBrushColor // set to current
+            tvCustomColorBrush?.setBackgroundColor(setCurrentCustomColor()!!)
+
         }
     }
+    private fun shareFile(uri : Uri) {
+        val shareIntent = Intent()
+        shareIntent.action = Intent.ACTION_SEND // opens snack  bar that allows us to send items
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri) // adds the path to file to the intent
+        shareIntent.type = "image/png"
+
+        startActivity(Intent.createChooser(shareIntent, "Share Painting"))
+    }
+}
     // @param : path to file
 //    private fun shareFile(result : String) {
 //        /*MediaScannerConnection provides a way for applications to pass a
@@ -379,15 +403,3 @@ class MainActivity : AppCompatActivity() {
 //            startActivity(Intent.createChooser(shareIntent, "Share Painting"))
 //        }
 //    }
-
-    private fun shareFile(uri : Uri) {
-        val shareIntent = Intent()
-        shareIntent.action = Intent.ACTION_SEND // opens snack  bar that allows us to send items
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri) // adds the path to file to the intent
-
-        shareIntent.type = "image/png"
-
-        startActivity(Intent.createChooser(shareIntent, "Share Painting"))
-
-    }
-}
